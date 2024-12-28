@@ -16,56 +16,61 @@ pipeline {
         }
         stage('Git Pulling') {
             steps {
-                git branch: 'master', url: 'https://github.com/AmanPathak-DevOps/Terraform-for-AWS.git'
+                git branch: 'master', url: 'https://github.com/rahulinti65/gaintech.git'
                 sh 'ls'
             }
         }
         stage('Init') {
             steps {
-                echo "Enter File Name: ${params.File_Name}"
-                echo "Pipeline Name: ${params.Pipeline}"
-                withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws ', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                    sh "terraform -chdir=/var/lib/jenkins/workspace/${params.Pipeline}/gaintech/${params.File_Name}/ init --lock=false"
+                withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: '6b798339-ce04-44aa-9297-4b3cdde6e2d5', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh "terraform -chdir=/var/lib/jenkins/workspace/${params.Pipeline}/${params.File_Name}/ init --lock=false"
                 }
             }
         }
         stage('Action') {
             steps {
                 echo "Selected Action: ${params.Terraform_Action}"
-                withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: '6b798339-ce04-44aa-9297-4b3cdde6e2d5', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     script {
                         if (params.Terraform_Action == 'plan') {
-                            sh "terraform -chdir=/var/lib/jenkins/workspace/${params.Pipeline}/gaintech/${params.File_Name}/ plan --lock=false"
+                            sh "terraform -chdir=/var/lib/jenkins/workspace/${params.Pipeline}/${params.File_Name}/ plan --lock=false"
                         } else if (params.Terraform_Action == 'apply') {
-                            // Manual approval for apply
-                            input message: 'Are you sure you want to apply the Terraform changes? Type "Yes" to confirm or "No" to abort.', parameters: [
-                                string(name: 'Confirm Apply', defaultValue: '', description: 'Type "Yes" to confirm or "No" to abort')
-                            ]
-                            script {
-                                if (params.'Confirm Apply' == 'Yes') {
-                                    sh "terraform -chdir=/var/lib/jenkins/workspace/${params.Pipeline}/gaintech/${params.File_Name}/ apply --lock=false -auto-approve"
-                                } else {
-                                    echo 'Apply action aborted by user.'
-                                }
+                            def confirmApply = input(
+                                message: 'Are you sure you want to apply the Terraform changes? Type "Yes" to confirm or "No" to abort.',
+                                parameters: [
+                                    string(name: 'Confirm Apply', defaultValue: '', description: 'Type "Yes" to confirm or "No" to abort')
+                                ]
+                            )
+                            def currentUser = currentBuild.getBuildCauses()[0].getUserId()
+                            confirmApply = confirmApply?.trim()?.toLowerCase()
+                            if (currentUser == 'rahul' && confirmApply == 'yes') {
+                                sh "terraform -chdir=/var/lib/jenkins/workspace/${params.Pipeline}/${params.File_Name}/ apply --lock=false -auto-approve"
+                            } else if (currentUser != 'rahul') {
+                                error "Only Rahul can approve the apply action."
+                            } else {
+                                echo 'Apply action aborted by user.'
                             }
                         } else if (params.Terraform_Action == 'destroy') {
-                            // Manual approval for destroy
-                            input message: 'Are you sure you want to destroy the resources? Type "Yes" to confirm or "No" to abort.', parameters: [
-                                string(name: 'Confirm Destroy', defaultValue: '', description: 'Type "Yes" to confirm or "No" to abort')
-                            ]
-                            script {
-                                if (params.'Confirm Destroy' == 'Yes') {
-                                    sh "terraform -chdir=/var/lib/jenkins/workspace/${params.Pipeline}/gaintech/${params.File_Name}/ destroy --lock=false -auto-approve"
-                                } else {
-                                    echo 'Destroy action aborted by user.'
-                                }
+                            def confirmDestroy = input(
+                                message: 'Are you sure you want to destroy the resources? Type "Yes" to confirm or "No" to abort.',
+                                parameters: [
+                                    string(name: 'Confirm Destroy', defaultValue: '', description: 'Type "Yes" to confirm or "No" to abort')
+                                ]
+                            )
+                            def currentUser = currentBuild.getBuildCauses()[0].getUserId()
+                            confirmDestroy = confirmDestroy?.trim()?.toLowerCase()
+                            if (currentUser == 'rahul' && confirmDestroy == 'yes') {
+                                sh "terraform -chdir=/var/lib/jenkins/workspace/${params.Pipeline}/${params.File_Name}/ destroy --lock=false -auto-approve"
+                            } else if (currentUser != 'rahul') {
+                                error "Only Rahul can approve the destroy action."
+                            } else {
+                                echo 'Destroy action aborted by user.'
                             }
                         } else {
                             error "Invalid value for Terraform_Action: ${params.Terraform_Action}"
                         }
                     }
                 }
-                
             }
         }
     }
