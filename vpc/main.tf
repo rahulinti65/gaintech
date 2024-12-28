@@ -19,7 +19,7 @@ data "aws_availability_zones" "available" {
   
 }
 
-data "aws_vpc" "available" {}
+
 
 module "dynamic_subnets" {
   source = "cloudposse/dynamic-subnets/aws"
