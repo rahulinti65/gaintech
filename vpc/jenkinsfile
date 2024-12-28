@@ -32,7 +32,7 @@ pipeline {
         stage('Action') {
             steps {
                 echo "Selected Action: ${params.Terraform_Action}"
-                withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws ', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     script {
                         if (params.Terraform_Action == 'plan') {
                             sh "terraform -chdir=/var/lib/jenkins/workspace/${params.Pipeline}/gaintech/${params.File_Name}/ plan --lock=false"

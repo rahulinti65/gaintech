@@ -15,6 +15,10 @@ module "vpc" {
     
 }
 
+data "aws_availability_zones" "available" {
+  
+}
+
 data "aws_vpc" "available" {}
 
 module "dynamic_subnets" {
